@@ -173,7 +173,61 @@ td a.open{font-weight:600;white-space:nowrap}
 .lb-foot .nav2{display:flex;gap:8px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 footer{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);font-size:13.5px}
+
+/* access gate */
+html.locked, html.locked body{overflow:hidden}
+.gate{position:fixed;inset:0;z-index:50;overflow-y:auto;background:var(--band);color:var(--band-ink);padding:max(24px,env(safe-area-inset-top,0px)) 16px max(24px,env(safe-area-inset-bottom,0px))}
+.gate::before{content:"";position:fixed;left:0;right:0;top:0;height:6px;background:var(--yellow)}
+.gate-inner{max-width:720px;margin:0 auto;display:grid;gap:22px;padding-block:24px}
+.gate-brand{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.gate-brand .logo img{height:48px}
+.gate-brand span{font:500 12px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--band-muted)}
+.gate h1{font-size:clamp(28px,4vw,40px);font-weight:700}
+.gate .lede{margin:0;color:var(--band-muted);max-width:62ch}
+.gate-card{background:var(--sheet);color:var(--ink);border-radius:14px;padding:clamp(18px,3vw,28px);display:grid;gap:16px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.gate-card h2{font-size:22px;font-weight:600}
+.gate-card .terms{display:grid;gap:10px;font-size:15px;max-height:min(42vh,360px);overflow-y:auto;padding-right:6px;border-bottom:1px solid var(--line);padding-bottom:14px}
+.gate-card .terms p{margin:0}
+.gate-card .terms strong{color:var(--ink)}
+.checks{display:grid;gap:10px}
+.check{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:15px;cursor:pointer}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--navy)}
+.gate-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.gate-actions .hint{font-size:13.5px;color:var(--muted)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.gate small{color:var(--band-muted);font-size:13px}
 </style>
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gate-title">
+  <div class="gate-inner">
+    <div class="gate-brand"><div class="logo"><img src="assets/tifand-logo.png" alt="TIFAND"></div><span>Confidential · Authorised use only</span></div>
+    <div>
+      <h1 id="gate-title">Before you continue</h1>
+      <p class="lede">This portfolio contains CVs, qualifications and copies of certificates belonging to TIFAND Limited employees. It is provided only to help assess TIFAND Limited for bids, tenders and contract opportunities.</p>
+    </div>
+    <form class="gate-card" id="gate-form">
+      <h2>Data protection and confidentiality notice</h2>
+      <div class="terms" tabindex="0" aria-label="Notice text">
+        <p><strong>Personal data.</strong> The documents in this portfolio contain personal data about TIFAND Limited employees. TIFAND Limited shares it under UK data protection law (the UK GDPR and the Data Protection Act 2018) for one purpose: the evaluation of TIFAND Limited's capability for a specific bid, tender or contract.</p>
+        <p><strong>Confidentiality.</strong> All content is confidential. You may use it only for that evaluation. Do not copy, download, forward, publish or disclose any CV, certificate or other document to anyone outside your evaluation team without TIFAND Limited's written consent.</p>
+        <p><strong>Security and retention.</strong> Keep any information you hold securely. Delete or destroy it once the evaluation is complete or when TIFAND Limited asks you to.</p>
+        <p><strong>No contact with individuals.</strong> Do not contact the employees named here directly or use their details for recruitment or marketing.</p>
+        <p><strong>Accuracy.</strong> Documents are copies supplied by the employees. Originals are available from TIFAND Limited on request.</p>
+        <p><strong>Questions or concerns.</strong> If you have reached this page by mistake, close it and do not share the link. For questions about this data, contact TIFAND Limited.</p>
+      </div>
+      <div class="checks">
+        <label class="check"><input type="checkbox" id="gc-purpose" required><span>I am viewing this portfolio only to evaluate TIFAND Limited for a bid, tender or contract.</span></label>
+        <label class="check"><input type="checkbox" id="gc-confidential" required><span>I will keep all content confidential and will not copy, share or publish it without TIFAND Limited's written consent.</span></label>
+        <label class="check"><input type="checkbox" id="gc-gdpr" required><span>I will handle the personal data in line with UK data protection law and delete it when the evaluation is complete.</span></label>
+      </div>
+      <div class="gate-actions">
+        <span class="hint" id="gate-hint">Tick all three statements to continue.</span>
+        <button class="btn" id="gate-enter" type="submit" disabled>I agree – view portfolio</button>
+      </div>
+    </form>
+    <small>By continuing you confirm that you accept this notice on behalf of yourself and your organisation.</small>
+  </div>
+</div>
+
 </head>
 <body>
 
@@ -205,7 +259,7 @@ footer{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);fo
   <section id="v-register" hidden></section>
 </main>
 
-<footer><div class="wrap">TIFAND Limited · Employee portfolio for bid and tender use · Certificate copies are reproduced from originals supplied by each employee. Expiry status is calculated against today's date.</div></footer>
+<footer><div class="wrap">TIFAND Limited · Employee portfolio for bid and tender use · Certificate copies are reproduced from originals supplied by each employee. Expiry status is calculated against today's date. Confidential – provided for bid evaluation only under UK data protection law.</div></footer>
 
 <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-labelledby="lb-title">
   <div class="lb-card">
@@ -390,5 +444,19 @@ const h = (location.hash||"").slice(1);
 if(DATA.some(p=>p.slug===h)) openProfile(h,false); else if(["matrix","register"].includes(h)) goView(h);
 </script>
 
+
+<script>
+(function(){
+  const KEY="tifand-portfolio-accepted";
+  const gate=document.getElementById("gate"), form=document.getElementById("gate-form"), btn=document.getElementById("gate-enter"), hint=document.getElementById("gate-hint");
+  const boxes=[...form.querySelectorAll('input[type="checkbox"]')];
+  const page=[document.querySelector(".mast"),document.querySelector(".nav"),document.getElementById("main"),document.querySelector("footer")];
+  function lock(on){ document.documentElement.classList.toggle("locked",on); page.forEach(el=>{ if(!el) return; if(on){el.setAttribute("inert","");el.setAttribute("aria-hidden","true");} else {el.removeAttribute("inert");el.removeAttribute("aria-hidden");} }); gate.hidden=!on; }
+  let ok=false; try{ ok = sessionStorage.getItem(KEY)==="yes"; }catch(e){}
+  lock(!ok);
+  form.addEventListener("change",()=>{ const all=boxes.every(b=>b.checked); btn.disabled=!all; hint.textContent= all ? "Thank you." : "Tick all three statements to continue."; });
+  form.addEventListener("submit",e=>{ e.preventDefault(); if(!boxes.every(b=>b.checked)) return; try{ sessionStorage.setItem(KEY,"yes"); }catch(err){} lock(false); window.scrollTo({top:0}); });
+})();
+</script>
 </body>
 </html>
