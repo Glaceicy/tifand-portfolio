@@ -174,6 +174,16 @@ td a.open{font-weight:600;white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 footer{border-top:1px solid var(--line);padding-block:20px;color:var(--muted);font-size:13.5px}
 
+
+.human{display:grid;gap:8px;background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:14px}
+.human .hq-label{font-weight:600;font-size:15px}
+.human .hq-q{font:600 17px var(--f-display);letter-spacing:.02em;color:var(--ink)}
+.human .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.human input{font:500 16px var(--f-mono);width:110px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;background:var(--sheet);color:var(--ink)}
+.human .newq{font:600 13px var(--f-body);background:none;border:none;color:var(--accent);cursor:pointer;padding:4px}
+.human .msg{font-size:13.5px;color:var(--muted)}
+.human .msg.ok{color:var(--ok)} .human .msg.bad{color:var(--warn)}
+.hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0}
 /* access gate */
 html.locked, html.locked body{overflow:hidden}
 .gate{position:fixed;inset:0;z-index:50;overflow-y:auto;background:var(--band);color:var(--band-ink);padding:max(24px,env(safe-area-inset-top,0px)) 16px max(24px,env(safe-area-inset-bottom,0px))}
@@ -219,8 +229,15 @@ html.locked, html.locked body{overflow:hidden}
         <label class="check"><input type="checkbox" id="gc-confidential" required><span>I will keep all content confidential and will not copy, share or publish it without TIFAND Limited's written consent.</span></label>
         <label class="check"><input type="checkbox" id="gc-gdpr" required><span>I will handle the personal data in line with UK data protection law and delete it when the evaluation is complete.</span></label>
       </div>
+      <div class="human" role="group" aria-labelledby="hq-label">
+        <div class="hq-label" id="hq-label">Security check – please confirm you are a person</div>
+        <div class="hq-q">What is <span id="hq-text">seven plus four</span>?</div>
+        <div class="row"><label for="gc-human" class="hp">Answer</label><input id="gc-human" inputmode="numeric" autocomplete="off" placeholder="Answer" aria-describedby="hq-msg"><button type="button" class="newq" id="hq-new">Try a different question</button></div>
+        <div class="msg" id="hq-msg">Type the answer in numbers, e.g. 12.</div>
+        <label class="hp" for="gc-website">Leave this field empty</label><input class="hp" id="gc-website" name="website" tabindex="-1" autocomplete="off">
+      </div>
       <div class="gate-actions">
-        <span class="hint" id="gate-hint">Tick all three statements to continue.</span>
+        <span class="hint" id="gate-hint">Tick all three statements and answer the security check to continue.</span>
         <button class="btn" id="gate-enter" type="submit" disabled>I agree – view portfolio</button>
       </div>
     </form>
@@ -454,8 +471,21 @@ if(DATA.some(p=>p.slug===h)) openProfile(h,false); else if(["matrix","register"]
   function lock(on){ document.documentElement.classList.toggle("locked",on); page.forEach(el=>{ if(!el) return; if(on){el.setAttribute("inert","");el.setAttribute("aria-hidden","true");} else {el.removeAttribute("inert");el.removeAttribute("aria-hidden");} }); gate.hidden=!on; }
   let ok=false; try{ ok = sessionStorage.getItem(KEY)==="yes"; }catch(e){}
   lock(!ok);
-  form.addEventListener("change",()=>{ const all=boxes.every(b=>b.checked); btn.disabled=!all; hint.textContent= all ? "Thank you." : "Tick all three statements to continue."; });
-  form.addEventListener("submit",e=>{ e.preventDefault(); if(!boxes.every(b=>b.checked)) return; try{ sessionStorage.setItem(KEY,"yes"); }catch(err){} lock(false); window.scrollTo({top:0}); });
+  const W=["zero","one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"];
+  const hqText=document.getElementById("hq-text"), hqIn=document.getElementById("gc-human"), hqMsg=document.getElementById("hq-msg"), hp=document.getElementById("gc-website");
+  let answer=0; const opened=Date.now();
+  function newQ(){ const a=2+Math.floor(Math.random()*9), b=1+Math.floor(Math.random()*9); const plus=Math.random()<.6||a<=b;
+    answer = plus ? a+b : a-b; hqText.textContent = W[a] + (plus?" plus ":" minus ") + W[b]; hqIn.value=""; hqMsg.textContent="Type the answer in numbers, e.g. 12."; hqMsg.className="msg"; update(); }
+  function human(){ return hqIn.value.trim()!=="" && Number(hqIn.value.trim())===answer && hp.value===""; }
+  function update(){ const ticks=boxes.every(b=>b.checked), hum=human(); btn.disabled=!(ticks&&hum);
+    if(hqIn.value.trim()!==""){ hqMsg.textContent = hum ? "Thank you – check passed." : "That answer is not right. Try again or choose a different question."; hqMsg.className = "msg " + (hum?"ok":"bad"); }
+    hint.textContent = !ticks ? "Tick all three statements and answer the security check to continue." : (!hum ? "Answer the security check to continue." : "Ready – select I agree."); }
+  form.addEventListener("change",update); hqIn.addEventListener("input",update);
+  document.getElementById("hq-new").addEventListener("click",newQ);
+  form.addEventListener("submit",e=>{ e.preventDefault(); update(); if(btn.disabled) return;
+    if(Date.now()-opened<2500){ hint.textContent="Please take a moment to read the notice, then try again."; return; }
+    try{ sessionStorage.setItem(KEY,"yes"); }catch(err){} lock(false); window.scrollTo({top:0}); });
+  newQ();
 })();
 </script>
 </body>
